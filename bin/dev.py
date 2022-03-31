@@ -1,13 +1,7 @@
 '''Advanced web-development server'''
 
-from __future__ import print_function
-
-import os, glob
-import six
-if six.PY3:
-    from http.server import SimpleHTTPRequestHandler, test
-else:
-    from SimpleHTTPServer import SimpleHTTPRequestHandler, test
+import os
+from http.server import SimpleHTTPRequestHandler, test
 import re
 
 def copy_byte_range(infile, outfile, start=None, stop=None, bufsize=16*1024):
@@ -68,10 +62,7 @@ class Handler(SimpleHTTPRequestHandler):
     def do_GET(self):
         if self.path in ['/', '/index.html']:
             build()
-        if six.PY3:
-            super().do_GET()
-        else:
-            SimpleHTTPRequestHandler.do_GET(self)
+        super().do_GET()
 
     # From https://github.com/danvk/RangeHTTPServer.
     # Safari requires Range to be supported for video files.
