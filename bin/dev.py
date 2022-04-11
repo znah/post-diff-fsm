@@ -37,7 +37,14 @@ def parse_byte_range(byte_range):
     return first, last
 
 def write_file(fname, fout):
+    skipping_jekyl_meta = False
     for s in open(fname):
+        if s.strip() == '---':
+            skipping_jekyl_meta = not skipping_jekyl_meta
+            continue
+        if skipping_jekyl_meta:
+            continue
+
         if s.strip().startswith('{% include '):
             fn = '../'+s.split()[2]
             write_file(fn, fout)
