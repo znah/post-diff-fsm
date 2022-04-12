@@ -10,25 +10,24 @@
 Out: 01000100000101010
 </pre></figure>
 
-<p>We'd like to design an algorithm that would produce the expected output string if we feed it with the input string character by character. There are many different possibilities to perform this task, including just storing the output string and emitting it without paying attention to the input at all. Intuitively, ideas behind Occam&#39;s razor and Kolmogorov's complexity suggest that simpler solutions are preferable. The simplicity gives us hope that the solution would be interpretable and generalize to input sequences beyond the training set.</p>
+<p>We'd like to design an algorithm that would produce the expected output string if we feed it with the input string character by character. There are many different possibilities to perform this task. The brute force way would be just to store the expected output string and emit it character by character without paying attention to the input at all. This is actually a pretty complex solution, for example implementing such an algorithm as a state machine would require the number of states that is equal to the string length. Intuitively, ideas behind <a href='https://en.wikipedia.org/wiki/Occam%27s_razor'>Occam&#39;s razor</a> and <a href='https://en.wikipedia.org/wiki/Kolmogorov_complexity'>Kolmogorov's complexity</a> suggest that simpler solutions are preferable. The simplicity gives us hope that the solution would be interpretable and generalize to input sequences beyond the training set.</p>
 
 <p>The simplest algorithm for the string pair above scans the input and replaces every second '1' character it encounters with '0'. A type of FSM called <a href='https://en.wikipedia.org/wiki/Mealy_machine'>Mealy Machine</a> is natural way of representing such algorithms:</p>
 <figure>
 
-<img src="images/task0_ref_fsm.svg">
-<div>
+<img style="margin-right:20px;height:180px;vertical-align: top;" src="images/task0_ref_fsm.svg">
+<div style="display:inline-block">
 {% include public/images/task0_ref.html %}
 </div>
+<figcaption>Mealy machine and its transition table</figcaption>
 </figure>
-<p>Fig FSM: Mealy machine and its transition table</p>
-
-<p>This machine starts at the state "A". The label at each edge has a form "&lt;input&gt;&#x2F;&lt;output&gt;": &lt;input&gt; character activates the transition along the given edge, and &lt;output&gt; character is emitted to the output string during the transitions. Transition tables are a common way to represent FSMs. Each row of the figure [fsm:right] corresponds to a different combination of <strong>input</strong> and <strong>state</strong>, and represents the new <strong>state'</strong> and the <strong>output</strong> value, encoded as two one-hot vectors. This table also includes the column <strong>s0</strong>, a one-hot vector, encoding the starting FSM state (which is replicated two times for completeness). Formally, this table can be represented by three tensors with following axes:</p>
+<p>This machine starts at the state "A". The label at each edge has a form "&lt;input&gt;&#x2F;&lt;output&gt;": &lt;input&gt; character activates the transition along the given edge, and &lt;output&gt; character is emitted to the output string during the transitions. Transition tables are a common way to represent FSMs. Each row of the transition table above corresponds to a different combination of <strong>input</strong> and <strong>state</strong>, and represents the new <strong>state'</strong> and the <strong>output</strong> value, encoded as two one-hot vectors. This table also includes the column <strong>s0</strong>, a one-hot vector, encoding the starting FSM state (which is replicated two times for completeness). Formally, this table can be represented by three tensors with following axes:</p>
 
 
 <figure> $$ \begin{aligned}
-T&: \mathsf{input} \times \mathsf{state} \times \mathsf{state'} \\
-R&: \mathsf{input} \times \mathsf{state} \times \mathsf{output} \\
-s^0&: \mathsf{state}
+T&:[\mathsf{input}, \mathsf{state}, \mathsf{state'}] \\
+R&:[\mathsf{input}, \mathsf{state}, \mathsf{output}] \\
+s^0&:[\mathsf{state}]
 \end{aligned} $$ </figure>
 
 <p>Now we can express the FSM output and state transition computation as the following sums</p>
@@ -53,15 +52,36 @@ def run_fsm(fsm: FSM, inputs):
 </d-code>
 <p>For now we were presenting states and characters as one-hot vectors, but we can also think of them as <i>probability distributions</i>. This relaxes the discrete set of one-hot vectors to a continuous space of vectors of positive values that sum up to one. We can think of this case as running a large population of stochastic state machines, and the above math still holds.</p>
 
-<p>Given that we represented a state machine in terms of differentiable operations, why don't we try to use gradient descent to find a machine given the input-output pair? We need to make sure that we use the right parameterisation that enforces rows of T, R and s to be probability distributions. Usually this is achieved by using the 'softmax' function. (T, R, s) are parametrized with real-valued tensors and softmax is applied along the last dimension to turn them into probabilities. Our toy examples are going to use the alphabet that consists of just two characters: '0' and '1'. We assume that we don't know the required number of FSM states in advance, so in the spirit of deep learning we are going to use an overparameterized FSM representation that has a maximum of 8 states.</p>
+<p>Given that we represented a state machine in terms of differentiable operations, why don't we try to use gradient descent to find a machine given the input-output pair? We need to make sure that we use the right parameterisation that enforces rows of $T$, $R$ and $s^0$ to be probability distributions. Usually this is achieved by using the 'softmax' function. $(T, R, s^0)$ are parametrized with real-valued tensors and softmax is applied along the last dimension to turn them into probabilities. Our toy examples are going to use the alphabet that consists of just two characters: '0' and '1'. We assume that we don't know the required number of FSM states in advance, so in the spirit of deep learning we are going to use an overparameterized FSM representation that has a maximum of 8 states.</p>
 <d-code block="" language="python">
+<p>CHAR_N &#x3D; 2</p>
+<p>STATE_N &#x3D; 8</p>
+<p>Params &#x3D; namedtuple(&#39;Params&#39;, &#39;T R s0&#39;)</p>
 
+<p>def init_fsm(key, noise&#x3D;1e-3) -&gt; Params:</p>
+<p>  k1, k2, k3 &#x3D; jax.random.split(key, 3)</p>
+<p>  T &#x3D; jax.random.normal(k1, [CHAR_N, STATE_N, STATE_N]) * noise</p>
+<p>  R &#x3D; jax.random.normal(k2, [CHAR_N, STATE_N, CHAR_N]) * noise</p>
+<p>  s0 &#x3D; jax.random.normal(k3, [STATE_N]) * noise</p>
+<p>  return Params(T, R, s0)</p>
+
+<p>def hardmax(x):</p>
+<p>  return nn.one_hot(x.argmax(-1), x.shape[-1])</p>
+
+<p>def decode_fsm(params: Params, hard&#x3D;False) -&gt; FSM:</p>
+<p>  T, R, s0 &#x3D; params</p>
+<p>  f &#x3D; hardmax if hard else nn.softmax</p>
+<p>  return FSM(f(T), f(R), f(s0))</p>
 </d-code>
 
-<p>'init_fsm' function creates a randomly initialized FSM. Parameters are set to very small values, so all distributions are close to uniform. 'decode_fsm' serves to convert parameters into FSM matrices to consume by 'run_fsm'. It has two operation modes: 'soft', when softmax is used, and 'hard', when all distributions get collapsed into one-hot vectors, and stochastic FSM becomes deterministic.</p>
+<p><code>'init_fsm'</code> function creates a randomly initialized FSM. Parameters are set to very small values, so all distributions are close to uniform. 'decode_fsm' serves to convert parameters into FSM matrices to consume by <code>'run_fsm'</code>. It has two operation modes: 'soft', when softmax is used, and 'hard', when all distributions get collapsed into one-hot vectors, and stochastic FSM becomes deterministic.</p>
 
 <p>Let's try to simply minimize the sum of squared-differences between the FSM output and the reference output sequence:</p>
-
+<d-code block="" language="python">
+<p>fsm &#x3D; decode_fsm(params)</p>
+<p>y, s &#x3D; run_fsm(fsm, x)</p>
+<p>error &#x3D; jp.square(y-y0).sum()</p>
+</d-code>
 <p>Throwing ADAM optimizer into minimizing the error indeed makes it go down. Getting there took a bit of fiddling with the optimizer parameters. Motivated by the lack of loss stochasticity and small number of training steps (400) I use a pretty high learning rate (0.25) and set beta1&#x3D;beta2&#x3D;0.5.</p>
 
 <figure>
@@ -76,13 +96,13 @@ def run_fsm(fsm: FSM, inputs):
 <p>We see that although the model manages to perfectly reproduce the desired output for the given input string, it's using many more states than necessary, and at some timesteps (e.g. 0 or 3) the probability is distributed among a number of states, so the process doesn't look deterministic. In machine learning, the usual strategy to steer the optimization into a more desirable solutions region is to introduce additional regularizer objectives. I experimented with a few ways to impose determinism and decrease the number of used states. The simplest and one of the most efficient ways I found was to <strong>penalize the entropy ($H$) of the average state probability across time steps</strong>: </p>
 
 <figure>
-$ p_i = {1 \over N_\mathsf{step}}\sum_t s^t_i $<br>
-$ H = -\sum_i p_i log(p_i) $
+$$ p_i = {1 \over N_\mathsf{step}}\sum_t s^t_i $$ <br>
+$$ H = -\sum_i p_i log(p_i) $$
 </figure>
 <p>The total loss is therefore </p>
 
 <figure>
-$ L_\mathsf{total} = L_\mathsf{error} + w_H H $
+$$ L_\mathsf{total} = L_\mathsf{error} + w_H H $$
 </figure>
 
 <p>where $W_H$ is a regularization coefficient that is set by default to 0.01 (we'll discuss this choice later). This regularization happened to be sufficient to steer optimization to the deterministic solution that only uses two states:</p>
