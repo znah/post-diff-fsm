@@ -24,19 +24,19 @@ Out: 01000100000101010
 <p>This machine starts at the state "A". The label at each edge has a form "&lt;input&gt;&#x2F;&lt;output&gt;": &lt;input&gt; character activates the transition along the given edge, and &lt;output&gt; character is emitted to the output string during the transitions. Transition tables are a common way to represent FSMs. Each row of the transition table above corresponds to a different combination of <strong>input</strong> and <strong>state</strong>, and represents the new <strong>state'</strong> and the <strong>output</strong> value, encoded as two one-hot vectors. This table also includes the column <strong>s0</strong>, a one-hot vector, encoding the starting FSM state (which is replicated two times for completeness). Formally, this table can be represented by three tensors with following axes:</p>
 
 
-<figure> $$ \begin{aligned}
+$$ \begin{aligned}
 T&:[\mathsf{input}, \mathsf{state}, \mathsf{state'}] \\
 R&:[\mathsf{input}, \mathsf{state}, \mathsf{output}] \\
 s^0&:[\mathsf{state}]
-\end{aligned} $$ </figure>
+\end{aligned} $$
 
 <p>Now we can express the FSM output and state transition computation as the following sums</p>
 
 
-<figure> $$ \begin{aligned}
+$$ \begin{aligned}
 y^t_{\mathsf{output}} &= \sum_{\mathsf{input},\mathsf{state}} x^t_\mathsf{input} s^t_\mathsf{state} R_{\mathsf{input}, \mathsf{state}, \mathsf{output}} \\
 s^{t+1}_{\mathsf{state'}} &= \sum_{\mathsf{input},\mathsf{state}} x^t_\mathsf{input} s^t_\mathsf{state} T_{\mathsf{input}, \mathsf{state}, \mathsf{state'}}
-\end{aligned}$$ </figure>
+\end{aligned}$$
 
 <p>where x, y, and s are sequences of one-hot vectors, representing inputs, outputs and FSM states. Luckily, modern differentiable programming frameworks (I'll be using JAX in this tutorial) provide the powerful <code>'</code><a href='https://jax.readthedocs.io/en/latest/_autosummary/jax.numpy.einsum.html'><code>einsum</code></a><code>'</code> function to compute these kinds of expressions. It's easy to combine it with the <code>'</code><a href='https://jax.readthedocs.io/en/latest/_autosummary/jax.lax.scan.html'><code>scan</code></a><code>'</code> primitive to compute FSM outputs and intermediate states for a given input:</p>
 <d-code block="" language="python">
@@ -50,7 +50,7 @@ def run_fsm(fsm: FSM, inputs):
   _, (outputs, states) = jax.lax.scan(f, fsm.s0, inputs)
   return outputs, jp.vstack([fsm.s0, states])
 </d-code>
-<p>For now we were presenting states and characters as one-hot vectors, but we can also think of them as <i>probability distributions</i>. This relaxes the discrete set of one-hot vectors to a continuous space of vectors of positive values that sum up to one. We can think of this case as running a large population of stochastic state machines, and the above math still holds.</p>
+<p>For now we were presenting states and characters as one-hot vectors, but we can also think of them as <i>probability distributions</i>. This relaxes the discrete set of one-hot vectors to a continuous space of vectors of positive values that sum up to one. The resulting model is called a <a href='https://en.wikipedia.org/wiki/Probabilistic_automaton'>probabilistic automaton</a> and the above math still holds.</p>
 
 <p>Given that we represented a state machine in terms of differentiable operations, why don't we try to use gradient descent to find a machine given the input-output pair? We need to make sure that we use the right parameterisation that enforces rows of $T$, $R$ and $s^0$ to be probability distributions. Usually this is achieved by using the 'softmax' function. $(T, R, s^0)$ are parametrized with real-valued tensors and softmax is applied along the last dimension to turn them into probabilities. Our toy examples are going to use the alphabet that consists of just two characters: '0' and '1'. We assume that we don't know the required number of FSM states in advance, so in the spirit of deep learning we are going to use an overparameterized FSM representation that has a maximum of 8 states.</p>
 <d-code block="" language="python">
@@ -95,28 +95,34 @@ def run_fsm(fsm: FSM, inputs):
 </figure>
 <p>We see that although the model manages to perfectly reproduce the desired output for the given input string, it's using many more states than necessary, and at some timesteps (e.g. 0 or 3) the probability is distributed among a number of states, so the process doesn't look deterministic. In machine learning, the usual strategy to steer the optimization into a more desirable solutions region is to introduce additional regularizer objectives. I experimented with a few ways to impose determinism and decrease the number of used states. The simplest and one of the most efficient ways I found was to <strong>penalize the entropy ($H$) of the average state probability across time steps</strong>: </p>
 
-<figure>
 $$ p_i = {1 \over N_\mathsf{step}}\sum_t s^t_i $$ <br>
 $$ H = -\sum_i p_i log(p_i) $$
-</figure>
+
 <p>The total loss is therefore </p>
 
-<figure>
 $$ L_\mathsf{total} = L_\mathsf{error} + w_H H $$
-</figure>
 
-<p>where $W_H$ is a regularization coefficient that is set by default to 0.01 (we'll discuss this choice later). This regularization happened to be sufficient to steer optimization to the deterministic solution that only uses two states:</p>
+<p>where $w_H$ is a regularization coefficient that is set by default to 0.01. This regularization happened to be sufficient to steer optimization to the deterministic solution that only uses two states:</p>
 
 <figure>
 <img style="width:400px" src="images/task_0_story_w_entropy.svg">
 </figure>
-<p>We see that the states 'A and 'H' of the learned machine are equivalent to the states 'A' and 'B' of the minimal machine shown on the fig [fsm].</p>
-<h2 id='robustness-and-initialization'><p>Robustness and initialization</p></h2>
-<p>Let's check how robust and dependent on the initialization the solution is. 'init_fsm' function uses the 'key' argument to generate the initial FSM parameters for the optimization. I've written a 'Trainer' class that encapsulates the task training and evaluation, and can be used like this:</p>
-
-<p>Returned data contains the final learned parameters, training logs and evaluations results (number of errors and used states) by the deterministic (decoded with 'hard&#x3D;True') version of the learned FSM. Here I'd like to give a great shout-out to 'jax.vmap' function, because with its help running 100 parallel experiments with different random keys boils down to the following lines:</p>
-
-<p>The diagram below shows results from running 100 randomly initialized experiments with four different values of <i>w</i><i>H</i>. We see that strong regularization increases the number of runs that have converged to the minimal two-state FSM, but also increases the number of erroneous runs, i.e. those that produced the machine that couldn't correctly process the training sequence.</p>
+<p>We see that states 'A' and 'H' of the learned machine are equivalent to the states 'A' and 'B' of the expected minimal FSM.</p>
+<h2 id='robustness-and-initialization'>Robustness and initialization</h2>
+<p>Let's check how robust and dependent on the initialization the solution is. <code>init_fsm</code> function uses the <code>key</code> argument to generate the initial FSM parameters for the optimization. I've written a <a href='http://znah.net'><code>Trainer</code></a> class that encapsulates the task training and evaluation, and can be used like this:</p>
+<d-code block="" language="python">
+<p>x  &#x3D; &#39;01010100100111111&#39;</p>
+<p>y0 &#x3D; &#39;01000100000101010&#39;</p>
+<p>trainer &#x3D; Trainer(x, y0)</p>
+<p>key &#x3D; jax.random.PRNGKey(1)</p>
+<p>result &#x3D; trainer.run(key)</p>
+</d-code>
+<p>Returned data contains the final learned parameters, training logs and evaluations results (number of errors and used states) by the deterministic (decoded with <code>hard&#x3D;True</code>) version of the learned FSM. Here I'd like to give a great shout-out to <a href='https://jax.readthedocs.io/en/latest/_autosummary/jax.vmap.html#jax.vmap'><code>jax.vmap</code></a> function, because with its help running 100 parallel experiments with different random keys boils down to the following lines:</p>
+<d-code block="" language="python">
+<p>keys &#x3D; jax.random.split(key, 100)</p>
+<p>results &#x3D; jax.vmap(trainer.run)(keys)</p>
+</d-code>
+<p>By default <a href='https://jax.readthedocs.io/en/latest/_autosummary/jax.vmap.html#jax.vmap'><code>vmap</code></a> replicates the nested function by introducing an extra dimension to all input and output arrays. Single line change creates many Adam optimizers and runs many training loops in parallel. The diagram below shows results from running 100 randomly initialized experiments with four different values of $w_H$. We see that strong regularization increases the number of runs that have converged to the minimal two-state FSM, but also increases the number of erroneous runs, i.e. those that produced the machine that couldn't correctly process the training sequence.</p>
 
 <figure><img src="images/task0_ent_lazy0.svg"></figure>
 <p>Entropy regularization is just one of many possible methods to steer the optimization towards desired solutions. Intuitively, machines that make fewer state transitions during processing of the training sequence are executing simpler, and thus, preferable behavior. Of course we may try to introduce another loss term that would penalize state transitions, but I'd like to demonstrate another approach here. What I tried is to initialize the transition tensor $T$ with a bias towards preserving the current state and disregarding the input. I do so by adding the identity matrix, that gets broadcasted for all input characters.</p>
@@ -124,13 +130,18 @@ $$ L_\mathsf{total} = L_\mathsf{error} + w_H H $$
 <p> T &#x3D; jax.random.normal(k1, [CHAR_N, STATE_N, STATE_N]) * noise</p>
 <p> T +&#x3D; jp.eye(STATE_N) * lazy_bias</p>
 </d-code>
-<p>Setting <code>lazy_bias&#x3D;1.0</code> happened to dramatically change the distribution of training outcomes, leading to higher chances of finding the minimal solution for lower values of $W_H$.</p>
+<p>Setting <code>lazy_bias&#x3D;1.0</code> happened to dramatically change the distribution of training outcomes, leading to higher chances of finding the minimal solution for lower values of $w_H$.</p>
 
 <figure><img src="images/task0_ent_lazy1.svg"></figure>
-<h2 id='more-toy-problems'><p>More toy problems</p></h2>
-<p>To see how the procedure described above handles different problems, I've created a "dataset" of 10 toy tasks and ran 100 training attempts for each of them. Table 1 summarizes the results. Surprisingly, all training runs for all tasks found solutions that correctly process given training sequences. This can be attributed to luck, because using a different random number generator seed ("2" instead of "1") leads to a few erroneous runs popping up here and there. </p>
+<p>My observations showed that for simple problems the optimization is not particularly sensitive to the choice of $w_H$, so I picked the value 0.01</p>
+<h2 id='more-toy-problems'>More toy problems</h2>
+<p>To see how the procedure described above handles different problems, I've created a "dataset" of 10 toy tasks and ran 1000 training attempts for each of them (thanks to JAX it takes a few seconds per task even on CPU). Almost all training runs found solutions that correctly process given training sequences. Only a few erroneous state machines were produced for tasks 1 and 9. The table below shows distribution of the number of states in discovered state machines, and minimal FSM diagram(s). </p>
 
-<p>The table also shows diagrams of the discovered state machines. For each task I display FSMs that don&#39;t make errors and have a minimal number of states. I also rename states, assigning letters in order of the first visit during processing of the training input. This way we can equalize solutions that only differ by the naming of states. Note that these diagrams only show nodes and edges that were traversed during processing of the training sequence, missing edges are considered undefined (e.g. task 3 FSM doesn't have an edge corresponding to the input "1" from the state B'").</p>
+<p>I rename states, assigning letters in the order of the first visit during processing of the training input. This way we can equalize solutions that only differ by the naming of states. Note that these diagrams only show nodes and edges that were traversed during processing of the training sequence, missing edges are considered undefined (e.g. task 3 FSM doesn't have an edge corresponding to the input "1" from the state B'").</p>
+
+<div class='fsm_table'>
+{% include public/all_tasks.html %}
+</div>
 
 <p>For <i>most</i> problems it's easy to validate that the intended solution was indeed found. The task 8 ("shift the string right by two characters") FSM may look a bit cumbersome, but it's easy to understand what the state machine is doing by renaming the states: <code>A-&gt;00, B-&gt;01, C-&gt;11, D-&gt;10</code>. Now the label of each state reflects two most recent input bits, stored by the FSM and ready to be emitted.</p>
 
@@ -138,18 +149,19 @@ $$ L_\mathsf{total} = L_\mathsf{error} + w_H H $$
 
 <figure><img src="images/2bitshift.svg"></figure>
 
-<p>Finally, task 9 (replace every 4th '1' with 0') happened to be an interesting example of an insufficiently defined problem. I expected the optimization to find the solution similar to problems 0 and 1: a loop with 4 states, that counts a number of encountered '1'-s and replaces the last with '0'. Turns out that there is more than one 4-state solution for the training sequence <code>'01010100100111111'</code>. Optimization found a 4-state FSM 25 times, only 13 of which was the one I expected. The diagram below shows all 4 discovered state machines and their counts:</p>
+<p>Finally, task 9 (replace every 4th '1' with 0') happened to be an interesting example of an insufficiently defined problem. I expected the optimization to find the solution similar to problems 0 and 1: a loop with 4 states, that counts a number of encountered '1'-s and replaces the last with '0'. Turns out that there is more than one 4-state solution for the training sequence <code>'01010100100111111'</code>. Optimization found a 4-state FSM 217 times, only 84 out of which were the machine I expected. Please expand the last cell of the table to see other discovered state FSMs and their counts. The other state machines have overfitted to the particular training sequence and are not going to perform the task correctly on other inputs. The usual rule of machine learning, when low training loss doesn't guarantee generalization, applies here as well. Additional initialization and regularization strategies may increase the chance of finding the well performing solutions.</p>
+<h2 id='related-work'>Related work</h2>
+<p>The amount of literature published on almost any topic is overwhelming these days. Finite state machine learning is not an exception. I tried to perform a quick search to give pointers on established methods that people use to solve FSM generation tasks similar to ones shown here. I also selected a few references that focus on different problems, but are conceptually similar, e.g. in their aim at finding the minimal possible solution to a given problem.</p>
 
-<figure>
-<img src="images/skip4_fsms.png">
-<figcaption>sdfs</figcaption>
-</figure>
+<p>Recently published work [] tries to solve similar sequential string processing problems, but using very small recurrent neural networks instead of discrete state machines. Authors observe that these compact models can be analyzed, interpreted.</p>
 
-<details> <summary>Table</summary>
-{% include public/all_tasks.html %}
-</details>
-<h2 id='related-work'><p>Related work</p></h2>
-<h2 id='acknowledgements'><p>Acknowledgements</p></h2>
+<p>There is a lot of ongoing work that focuses on using discrete algorithms (such as quantization or sorting, FSMs) blocks inside of end-to-end differentiable pipelines. VQVAE…</p>
+
+<p>Finally, string processing with state machines and FSM learning from data is a well studied subject that I unfortunately have only superficial knowledge about. I found this thesis to be a nice introduction into modern FSM learning methods and their applications. Here are some other resources on the topic:</p>
+
+<p>This literature review is incomplete and I've definitely missed some important references. Please let me know if I should include something else, e.g. if there's a paper that describes the same or very similar ideas to the one shown here.</p>
+<h2 id='acknowledgements'>Acknowledgements</h2>
+<p>I'd like to say thank you to my long-term collaborators Ettore Randazzo and Domink Roblek for providing feedback and helpful suggestions for this article. I also thank Google Research for supporting my work on this tutorial as a part of my broader research agenda.</p>
 
 </d-article>
 <d-appendix>
