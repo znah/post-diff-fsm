@@ -46,24 +46,10 @@ def write_file(fname, fout):
             continue
 
         if s.strip().startswith('{% include '):
-            fn = '../'+s.split()[2]
+            fn = s.split()[2]
             write_file(fn, fout)
         else:
             fout.write(s)
-
-# def build():
-#     if os.environ.get("GIT_API_KEY_SELFORG") is not None:
-#         print("using api key in environment")
-#         os.system('''curl -o ../article.html \
-#         --header 'Authorization: token ''' + os.environ.get("GIT_API_KEY_SELFORG") + '''' \
-#         --header 'Accept: application/vnd.github.v3.raw' \
-#         --location https://api.github.com/repos/$(git remote -v | head -n 1 | sed 's/.*github\.com:\(.*\)\.git.*/\\1/')/contents/article.html \
-#         ''')
-#     else:
-#         print("no api key available")
-#     with open('index.html', 'w') as fout:
-#       write_file('../main.html', fout)
-#     print('build finished')
 
 
 class Handler(SimpleHTTPRequestHandler):
@@ -80,11 +66,6 @@ class Handler(SimpleHTTPRequestHandler):
             self.wfile.write(bdata)
         else:
             super().do_GET()
-
-
-        # if self.path in ['/', '/index.html']:
-        #     build()
-        # super().do_GET()
 
     # From https://github.com/danvk/RangeHTTPServer.
     # Safari requires Range to be supported for video files.
@@ -141,6 +122,5 @@ class Handler(SimpleHTTPRequestHandler):
     
 
 if __name__ == '__main__':
-    os.chdir('public')
-    #build()
+    os.chdir('docs')
     test(HandlerClass=Handler)

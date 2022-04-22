@@ -1,0 +1,131 @@
+
+@ARTICLE{Lan2021-sz,
+  title         = "Minimum Description Length Recurrent Neural Networks",
+  author        = "Lan, Nur and Geyer, Michal and Chemla, Emmanuel and Katzir,
+                   Roni",
+  abstract      = "We train neural networks to optimize a Minimum Description
+                   Length score, i.e., to balance between the complexity of the
+                   network and its accuracy at a task. We show that networks
+                   optimizing this objective function master tasks involving
+                   memory challenges and go beyond context-free languages.
+                   These learners master languages such as $a^nb^n$,
+                   $a^nb^nc^n$, $a^nb^\{2n\}$, $a^nb^mc^\{n+m\}$, and they
+                   perform addition. Moreover, they often do so with 100\%
+                   accuracy. The networks are small, and their inner workings
+                   are transparent. We thus provide formal proofs that their
+                   perfect accuracy holds not only on a given test set, but for
+                   any input sequence. To our knowledge, no other connectionist
+                   model has been shown to capture the underlying grammars for
+                   these languages in full generality.",
+  month         =  oct,
+  year          =  2021,
+  archivePrefix = "arXiv",
+  primaryClass  = "cs.CL",
+  eprint        = "2111.00600",
+  url = "http://arxiv.org/abs/2111.00600",
+}
+
+@ARTICLE{Raffelt2009-vn,
+  title     = "{LearnLib}: a framework for extrapolating behavioral models",
+  author    = "Raffelt, Harald and Steffen, Bernhard and Berg, Therese and
+               Margaria, Tiziana",
+  journal   = "Int. J. Softw. Tools Technol. Trans.",
+  publisher = "Springer Science and Business Media LLC",
+  volume    =  11,
+  number    =  5,
+  pages     = "393--407",
+  month     =  nov,
+  year      =  2009,
+  language  = "en"
+}
+
+@ARTICLE{Hannun2020-vj,
+  title         = "Differentiable Weighted {Finite-State} Transducers",
+  author        = "Hannun, Awni and Pratap, Vineel and Kahn, Jacob and Hsu,
+                   Wei-Ning",
+  abstract      = "We introduce a framework for automatic differentiation with
+                   weighted finite-state transducers (WFSTs) allowing them to
+                   be used dynamically at training time. Through the separation
+                   of graphs from operations on graphs, this framework enables
+                   the exploration of new structured loss functions which in
+                   turn eases the encoding of prior knowledge into learning
+                   algorithms. We show how the framework can combine pruning
+                   and back-off in transition models with various
+                   sequence-level loss functions. We also show how to learn
+                   over the latent decomposition of phrases into word pieces.
+                   Finally, to demonstrate that WFSTs can be used in the
+                   interior of a deep neural network, we propose a
+                   convolutional WFST layer which maps lower-level
+                   representations to higher-level representations and can be
+                   used as a drop-in replacement for a traditional convolution.
+                   We validate these algorithms with experiments in handwriting
+                   recognition and speech recognition.",
+  month         =  oct,
+  year          =  2020,
+  archivePrefix = "arXiv",
+  primaryClass  = "cs.LG",
+  eprint        = "2010.01003"
+}
+
+@PHDTHESIS{Aspects_undated-nl,
+  title  = "Learning {Finite-State} Machines",
+  author = "Aspects, Algorithmic"
+}
+
+@MISC{Hannun2021-gi,
+  title        = "An introduction to weighted automata in machine learning",
+  author       = "Hannun, Awni",
+  abstract     = "The goal of this work is to introduce the reader to weighted
+                  finite-state automata and their application to machine
+                  learning. I begin by motivating the use of automata in
+                  machine learning and proceed with an introduction to
+                  acceptors, transducers, and their associated properties. Many
+                  of the core operations of weighted automata are then
+                  described in detail. Following this, the work moves closer to
+                  the research frontier by explaining automatic differentiation
+                  and its use with weighted automata. The last section presents
+                  several extended examples to gain deeper familiarity with
+                  weighted automata, their operations, and their use in machine
+                  learning.",
+  year         =  2021,
+  howpublished = "\url{https://awnihannun.com/writing/automata_ml/automata_in_machine_learning.pdf}",
+  note         = "Accessed: 2022-3-21"
+}
+
+@ARTICLE{Johnson2020-ky,
+  title         = "Learning graph structure with A finite-State Automaton layer",
+  author        = "Johnson, Daniel D and Larochelle, Hugo and Tarlow, Daniel",
+  abstract      = "Graph-based neural network models are producing strong
+                   results in a number of domains, in part because graphs
+                   provide flexibility to encode domain knowledge in the form
+                   of relational structure (edges) between nodes in the graph.
+                   In practice, edges are used both to represent intrinsic
+                   structure (e.g., abstract syntax trees of programs) and more
+                   abstract relations that aid reasoning for a downstream task
+                   (e.g., results of relevant program analyses). In this work,
+                   we study the problem of learning to derive abstract
+                   relations from the intrinsic graph structure. Motivated by
+                   their power in program analyses, we consider relations
+                   defined by paths on the base graph accepted by a
+                   finite-state automaton. We show how to learn these relations
+                   end-to-end by relaxing the problem into learning
+                   finite-state automata policies on a graph-based POMDP and
+                   then training these policies using implicit differentiation.
+                   The result is a differentiable Graph Finite-State Automaton
+                   (GFSA) layer that adds a new edge type (expressed as a
+                   weighted adjacency matrix) to a base graph. We demonstrate
+                   that this layer can find shortcuts in grid-world graphs and
+                   reproduce simple static analyses on Python programs.
+                   Additionally, we combine the GFSA layer with a larger
+                   graph-based model trained end-to-end on the variable misuse
+                   program understanding task, and find that using the GFSA
+                   layer leads to better performance than using hand-engineered
+                   semantic edges or other baseline methods for adding learned
+                   edge types.",
+  month         =  jul,
+  year          =  2020,
+  copyright     = "http://arxiv.org/licenses/nonexclusive-distrib/1.0/",
+  archivePrefix = "arXiv",
+  primaryClass  = "cs.LG",
+  eprint        = "2007.04929"
+}

@@ -17,26 +17,26 @@ Out: 01000100000101010
 
 <img style="margin-right:20px;height:180px;vertical-align: top;" src="images/task0_ref_fsm.svg">
 <div style="display:inline-block">
-{% include public/images/task0_ref.html %}
+{% include images/task0_ref.html %}
 </div>
 <figcaption>Mealy machine and its transition table</figcaption>
 </figure>
 <p>This machine starts at the state "A". The label at each edge has a form "&lt;input&gt;&#x2F;&lt;output&gt;": &lt;input&gt; character activates the transition along the given edge, and &lt;output&gt; character is emitted to the output string during the transitions. Transition tables are a common way to represent FSMs. Each row of the transition table above corresponds to a different combination of <strong>input</strong> and <strong>state</strong>, and represents the new <strong>state'</strong> and the <strong>output</strong> value, encoded as two one-hot vectors. This table also includes the column <strong>s0</strong>, a one-hot vector, encoding the starting FSM state (which is replicated two times for completeness). Formally, this table can be represented by three tensors with following axes:</p>
 
 
-$$ \begin{aligned}
+<p>$$ \begin{aligned}
 T&:[\mathsf{input}, \mathsf{state}, \mathsf{state'}] \\
 R&:[\mathsf{input}, \mathsf{state}, \mathsf{output}] \\
 s^0&:[\mathsf{state}]
-\end{aligned} $$
+\end{aligned} $$</p>
 
 <p>Now we can express the FSM output and state transition computation as the following sums</p>
 
 
-$$ \begin{aligned}
+<p>$$ \begin{aligned}
 y^t_{\mathsf{output}} &= \sum_{\mathsf{input},\mathsf{state}} x^t_\mathsf{input} s^t_\mathsf{state} R_{\mathsf{input}, \mathsf{state}, \mathsf{output}} \\
 s^{t+1}_{\mathsf{state'}} &= \sum_{\mathsf{input},\mathsf{state}} x^t_\mathsf{input} s^t_\mathsf{state} T_{\mathsf{input}, \mathsf{state}, \mathsf{state'}}
-\end{aligned}$$
+\end{aligned}$$</p>
 
 <p>where x, y, and s are sequences of one-hot vectors, representing inputs, outputs and FSM states. Luckily, modern differentiable programming frameworks (I'll be using JAX in this tutorial) provide the powerful <code>'</code><a href='https://jax.readthedocs.io/en/latest/_autosummary/jax.numpy.einsum.html'><code>einsum</code></a><code>'</code> function to compute these kinds of expressions. It's easy to combine it with the <code>'</code><a href='https://jax.readthedocs.io/en/latest/_autosummary/jax.lax.scan.html'><code>scan</code></a><code>'</code> primitive to compute FSM outputs and intermediate states for a given input:</p>
 <d-code block="" language="python">
@@ -93,14 +93,9 @@ def run_fsm(fsm: FSM, inputs):
 <img style="width:400px" src="images/task_0_story_naive.svg">
 <figcaption></figcaption>
 </figure>
-<p>We see that although the model manages to perfectly reproduce the desired output for the given input string, it's using many more states than necessary, and at some timesteps (e.g. 0 or 3) the probability is distributed among a number of states, so the process doesn't look deterministic. In machine learning, the usual strategy to steer the optimization into a more desirable solutions region is to introduce additional regularizer objectives. I experimented with a few ways to impose determinism and decrease the number of used states. The simplest and one of the most efficient ways I found was to <strong>penalize the entropy ($H$) of the average state probability across time steps</strong>: </p>
+<p>We see that although the model manages to perfectly reproduce the desired output for the given input string, it's using many more states than necessary, and at some timesteps (e.g. 0 or 3) the probability is distributed among a number of states, so the process doesn't look deterministic. In machine learning, the usual strategy to steer the optimization into a more desirable solutions region is to introduce additional regularizer objectives. In our case "desirable solutions" are the ones that have deterministic behavior and use the least number of states. I experimented with a few ways to achieve these goals. The simplest and one of the most efficient method I found was to <strong>penalize the entropy ($H$) of the average state probability across time steps</strong>: $$ p_i &#x3D; {1 \over N_\mathsf{step}}\sum_t s^t_i $$ $$ H &#x3D; -\sum_i p_i log(p_i) $$</p>
 
-$$ p_i = {1 \over N_\mathsf{step}}\sum_t s^t_i $$ <br>
-$$ H = -\sum_i p_i log(p_i) $$
-
-<p>The total loss is therefore </p>
-
-$$ L_\mathsf{total} = L_\mathsf{error} + w_H H $$
+<p>The total loss is therefore $$ L_\mathsf{total} &#x3D; L_\mathsf{error} + w_H H $$</p>
 
 <p>where $w_H$ is a regularization coefficient that is set by default to 0.01. This regularization happened to be sufficient to steer optimization to the deterministic solution that only uses two states:</p>
 
@@ -137,10 +132,10 @@ $$ L_\mathsf{total} = L_\mathsf{error} + w_H H $$
 <h2 id='more-toy-problems'>More toy problems</h2>
 <p>To see how the procedure described above handles different problems, I've created a "dataset" of 10 toy tasks and ran 1000 training attempts for each of them (thanks to JAX it takes a few seconds per task even on CPU). Almost all training runs found solutions that correctly process given training sequences. Only a few erroneous state machines were produced for tasks 1 and 9. The table below shows distribution of the number of states in discovered state machines, and minimal FSM diagram(s). </p>
 
-<p>I rename states, assigning letters in the order of the first visit during processing of the training input. This way we can equalize solutions that only differ by the naming of states. Note that these diagrams only show nodes and edges that were traversed during processing of the training sequence, missing edges are considered undefined (e.g. task 3 FSM doesn't have an edge corresponding to the input "1" from the state B'").</p>
+<p>I rename states, assigning letters in the order of the first visit during processing of the training input. This way we can equalize solutions that only differ by the states' order. Note that these diagrams only show nodes and edges that were traversed during processing of the training sequence, missing edges are considered undefined (e.g. task 3 FSM doesn't have an edge corresponding to the input "1" from the state B'").</p>
 
 <div class='fsm_table'>
-{% include public/all_tasks.html %}
+{% include all_tasks.html %}
 </div>
 
 <p>For <i>most</i> problems it's easy to validate that the intended solution was indeed found. The task 8 ("shift the string right by two characters") FSM may look a bit cumbersome, but it's easy to understand what the state machine is doing by renaming the states: <code>A-&gt;00, B-&gt;01, C-&gt;11, D-&gt;10</code>. Now the label of each state reflects two most recent input bits, stored by the FSM and ready to be emitted.</p>
@@ -149,11 +144,11 @@ $$ L_\mathsf{total} = L_\mathsf{error} + w_H H $$
 
 <figure><img src="images/2bitshift.svg"></figure>
 
-<p>Finally, task 9 (replace every 4th '1' with 0') happened to be an interesting example of an insufficiently defined problem. I expected the optimization to find the solution similar to problems 0 and 1: a loop with 4 states, that counts a number of encountered '1'-s and replaces the last with '0'. Turns out that there is more than one 4-state solution for the training sequence <code>'01010100100111111'</code>. Optimization found a 4-state FSM 217 times, only 84 out of which were the machine I expected. Please expand the last cell of the table to see other discovered state FSMs and their counts. The other state machines have overfitted to the particular training sequence and are not going to perform the task correctly on other inputs. The usual rule of machine learning, when low training loss doesn't guarantee generalization, applies here as well. Additional initialization and regularization strategies may increase the chance of finding the well performing solutions.</p>
+<p>Finally, task 9 (replace every 4th '1' with 0') happened to be an interesting example of an insufficiently defined problem. I expected the optimization to find the solution similar to problems 0 and 1: a loop with 4 states, that counts a number of encountered '1'-s and replaces the last with '0'. Turns out that there is more than one 4-state solution for the training sequence <code>'01010100100111111'</code>. Optimization found a 4-state FSM 217 times, only 84 out of which were the machine I expected. If you expand the last cell of the table, which shows all discovered FSMs and their counts, you will see that we happened to be quite fortunate, because the second most popular machine count is smaller by just one. The other state machines have overfitted to the particular training sequence and are not going to perform the correctly on other inputs. The usual rule of machine learning, when low training loss doesn't guarantee generalization, applies here as well. Additional initialization and regularization strategies may increase the chance of finding the well performing solutions.</p>
 <h2 id='related-work'>Related work</h2>
 <p>The amount of literature published on almost any topic is overwhelming these days. Finite state machine learning is not an exception. I tried to perform a quick search to give pointers on established methods that people use to solve FSM generation tasks similar to ones shown here. I also selected a few references that focus on different problems, but are conceptually similar, e.g. in their aim at finding the minimal possible solution to a given problem.</p>
 
-<p>Recently published work [] tries to solve similar sequential string processing problems, but using very small recurrent neural networks instead of discrete state machines. Authors observe that these compact models can be analyzed, interpreted.</p>
+<p>The recent work <d-cite key="Lan2021-sz"></d-cite> tries to solve toy sequential string processing problems using very small recurrent neural networks instead of discrete state machines, and uses genetic algorithms instead of differentiable optimization. Authors observe that these compact models can be analyzed, interpreted.</p>
 
 <p>There is a lot of ongoing work that focuses on using discrete algorithms (such as quantization or sorting, FSMs) blocks inside of end-to-end differentiable pipelines. VQVAE…</p>
 
