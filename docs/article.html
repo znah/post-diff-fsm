@@ -1,4 +1,5 @@
 <d-article>
+<p><a href="https://colab.research.google.com/github/znah/post-diff-fsm/blob/master/notebooks/diff_fsm_jax.ipynb#scrollTo=KqJ971iNjenq" target="_blank" class="colab-root">Reproduce in a <span class="colab-span">Notebook</span></a></p>
 <p>In this blog post I'd like to show how differentiable optimization can be used to learn deterministic Finite State Machines (FSM) for solving toy string processing tasks. There exists a vast literature on various approaches to FSM synthesis from data, so it's highly likely that the particular method described here is either well known by the community, or discarded as not applicable to anything beyond very simple toy problems. A quick review of related literature will be given in the Related Work section. Nevertheless I think that experiments shown here may have some educational value, e.g. demonstrating less conventional uses of differentiable programming and some JAX tricks.</p>
 
 <p>"If all you have is a hammer, everything looks like a nail", and Differentiable Programming aka Deep Learning is probably one of the most popular hammers these days. It's typically associated with optimizing computational structures that mostly consist of operations with high-dimensional vectors of real values. Surprisingly, this approach is, to some extent, applicable to learning simple discrete controllers.</p>
@@ -135,6 +136,7 @@ def run_fsm(fsm: FSM, inputs):
 <p>I rename states, assigning letters in the order of the first visit during processing of the training input. This way we can equalize solutions that only differ by the states' order. Note that these diagrams only show nodes and edges that were traversed during processing of the training sequence, missing edges are considered undefined (e.g. task 3 FSM doesn't have an edge corresponding to the input "1" from the state B'").</p>
 
 <div class='fsm_table'>
+<a href="https://colab.research.google.com/github/znah/post-diff-fsm/blob/master/notebooks/diff_fsm_jax.ipynb#scrollTo=X7vKvta5-Nle" target="_blank" class="colab-root">Reproduce in a <span class="colab-span">Notebook</span></a>
 {% include all_tasks.html %}
 </div>
 
@@ -156,7 +158,7 @@ def run_fsm(fsm: FSM, inputs):
 
 <p>This literature review is incomplete and I've definitely missed some important references. Please let me know if I should include something else, e.g. if there's a paper that describes the same or very similar ideas to the one shown here.</p>
 <h2 id='acknowledgements'>Acknowledgements</h2>
-<p>I'd like to say thank you to my long-term collaborators Ettore Randazzo and Domink Roblek for providing feedback and helpful suggestions for this article. I also thank Google Research for supporting my work on this tutorial as a part of my broader research agenda.</p>
+<p>I'd like to say thank you to my long-term collaborators Ettore Randazzo, Eyvind Niklasson and Dominik Roblek for providing feedback and helpful suggestions for this article. I also thank Google Research for supporting my work on this tutorial as a part of my broader research agenda.</p>
 
 </d-article>
 <d-appendix>
