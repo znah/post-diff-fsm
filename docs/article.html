@@ -1,8 +1,8 @@
 <d-article>
 <p><a href="https://colab.research.google.com/github/znah/post-diff-fsm/blob/master/notebooks/diff_fsm_jax.ipynb#scrollTo=KqJ971iNjenq" target="_blank" class="colab-root">Reproduce in a <span class="colab-span">Notebook</span></a></p>
-<p>In this blog post I'd like to show how differentiable optimization can be used to learn deterministic Finite State Machines (FSM) for solving toy string processing tasks. There exists a vast literature on various approaches to FSM synthesis from data, so it's highly likely that the particular method described here is either well known by the community, or discarded as not applicable to anything beyond very simple toy problems. A quick review of related literature will be given in the Related Work section. Nevertheless I think that experiments shown here may have some educational value, e.g. demonstrating less conventional uses of differentiable programming and some JAX tricks.</p>
+<p>In this blog post I'd like to show how differentiable optimization can be used to learn Finite State Machines (FSM) for solving toy string processing tasks. I'll show how simple regularization and initialization techniques can steer continuous optimization towards finding discrete deterministic solutions and increase the training success rate. I think that experiments shown here may have some educational value, e.g. in demonstrating less conventional (and perhaps unexpected) uses of differentiable programming and some elegant JAX tricks.</p>
 
-<p>"If all you have is a hammer, everything looks like a nail", and Differentiable Programming aka Deep Learning is probably one of the most popular hammers these days. It's typically associated with optimizing computational structures that mostly consist of operations with high-dimensional vectors of real values. Surprisingly, this approach is, to some extent, applicable to learning simple discrete controllers.</p>
+<p>There exists a vast literature on various approaches to FSM synthesis from data, so it's highly likely that the community already knows the particular method described here. A quick review of related literature will be given in the <a href='#related-work'>Related Work</a> section. Please feel free to point me to additional relevant publications, you can do this by <a href='https://github.com/znah/post-diff-fsm/issues'>opening an issue</a> in the article repository.</p>
 
 <p>Here is an example of a toy problem we are going to solve. Consider a pair of input-output strings: </p>
 
@@ -83,7 +83,7 @@ def run_fsm(fsm: FSM, inputs):
 <p>y, s &#x3D; run_fsm(fsm, x)</p>
 <p>error &#x3D; jp.square(y-y0).sum()</p>
 </d-code>
-<p>Throwing ADAM optimizer into minimizing the error indeed makes it go down. Getting there took a bit of fiddling with the optimizer parameters. Motivated by the lack of loss stochasticity and small number of training steps (400) I use a pretty high learning rate (0.25) and set beta1&#x3D;beta2&#x3D;0.5.</p>
+<p>Throwing ADAM optimizer into minimizing the error indeed makes it go down. Getting there took a bit of fiddling with the optimizer parameters. Motivated by the lack of loss stochasticity and small number of training steps (400) I use a pretty high learning rate (0.25) and set <code>beta1&#x3D;beta2&#x3D;0.5</code>.</p>
 
 <figure>
 <img style="width:400px" src="images/loss_goes_down.svg">
@@ -105,7 +105,7 @@ def run_fsm(fsm: FSM, inputs):
 </figure>
 <p>We see that states 'A' and 'H' of the learned machine are equivalent to the states 'A' and 'B' of the expected minimal FSM.</p>
 <h2 id='robustness-and-initialization'>Robustness and initialization</h2>
-<p>Let's check how robust and dependent on the initialization the solution is. <code>init_fsm</code> function uses the <code>key</code> argument to generate the initial FSM parameters for the optimization. I've written a <a href='http://znah.net'><code>Trainer</code></a> class that encapsulates the task training and evaluation, and can be used like this:</p>
+<p>Let's check how robust and dependent on the initialization the solution is. <code>init_fsm</code> function uses the <code>key</code> argument to generate the initial FSM parameters for the optimization. I wrote a <a href='https://colab.research.google.com/github/znah/post-diff-fsm/blob/master/notebooks/diff_fsm_jax.ipynb#scrollTo=BVR4SIC3cbS2'><code>Trainer</code></a> class that encapsulates the task training and evaluation, and can be used like this:</p>
 <d-code block="" language="python">
 <p>x  &#x3D; &#39;01010100100111111&#39;</p>
 <p>y0 &#x3D; &#39;01000100000101010&#39;</p>
@@ -113,7 +113,7 @@ def run_fsm(fsm: FSM, inputs):
 <p>key &#x3D; jax.random.PRNGKey(1)</p>
 <p>result &#x3D; trainer.run(key)</p>
 </d-code>
-<p>Returned data contains the final learned parameters, training logs and evaluations results (number of errors and used states) by the deterministic (decoded with <code>hard&#x3D;True</code>) version of the learned FSM. Here I'd like to give a great shout-out to <a href='https://jax.readthedocs.io/en/latest/_autosummary/jax.vmap.html#jax.vmap'><code>jax.vmap</code></a> function, because with its help running 100 parallel experiments with different random keys boils down to the following lines:</p>
+<p>Returned data contains the final learned parameters, training log and evaluation result (number of errors and used states) by the deterministic (decoded with <code>hard&#x3D;True</code>) version of the learned FSM. Here I'd like to give a great shout-out to <a href='https://jax.readthedocs.io/en/latest/_autosummary/jax.vmap.html#jax.vmap'><code>jax.vmap</code></a> function, because with its help running 100 parallel experiments with different random keys boils down to the following lines:</p>
 <d-code block="" language="python">
 <p>keys &#x3D; jax.random.split(key, 100)</p>
 <p>results &#x3D; jax.vmap(trainer.run)(keys)</p>
