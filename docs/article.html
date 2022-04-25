@@ -51,7 +51,7 @@ def run_fsm(fsm: FSM, inputs):
   _, (outputs, states) = jax.lax.scan(f, fsm.s0, inputs)
   return outputs, jp.vstack([fsm.s0, states])
 </d-code>
-<p>For now we were presenting states and characters as one-hot vectors, but we can also think of them as <i>probability distributions</i>. This relaxes the discrete set of one-hot vectors to a continuous space of vectors of positive values that sum up to one. The resulting model is called a <a href='https://en.wikipedia.org/wiki/Probabilistic_automaton'>probabilistic automaton</a> and the above math still holds.</p>
+<p>For now we were presenting states and characters as one-hot vectors, but we can also think of them as <i>probability distributions</i>. This relaxes the discrete set of one-hot vectors to a continuous space of vectors of non-negative values that sum up to one. The resulting model is called a <a href='https://en.wikipedia.org/wiki/Probabilistic_automaton'>probabilistic automaton</a> and the above math still holds.</p>
 
 <p>Given that we represented a state machine in terms of differentiable operations, why don't we try to use gradient descent to find a machine given the input-output pair? We need to make sure that we use the right parameterisation that enforces rows of $T$, $R$ and $s^0$ to be probability distributions. Usually this is achieved by using the 'softmax' function. $(T, R, s^0)$ are parametrized with real-valued tensors and softmax is applied along the last dimension to turn them into probabilities. Our toy examples are going to use the alphabet that consists of just two characters: '0' and '1'. We assume that we don't know the required number of FSM states in advance, so in the spirit of deep learning we are going to use an overparameterized FSM representation that has a maximum of 8 states.</p>
 <d-code block="" language="python">
@@ -146,7 +146,7 @@ def run_fsm(fsm: FSM, inputs):
 
 <figure><img src="images/2bitshift.svg"></figure>
 
-<p>Finally, task 9 (replace every 4th '1' with 0') happened to be an interesting example of an insufficiently defined problem. I expected the optimization to find the solution similar to problems 0 and 1: a loop with 4 states, that counts a number of encountered '1'-s and replaces the last with '0'. Turns out that there is more than one 4-state solution for the training sequence <code>'01010100100111111'</code>. Optimization found a 4-state FSM 217 times, only 84 out of which were the machine I expected. If you expand the last cell of the table, which shows all discovered FSMs and their counts, you will see that we happened to be quite fortunate, because the second most popular machine count is smaller by just one. The other state machines have overfitted to the particular training sequence and are not going to perform the correctly on other inputs. The usual rule of machine learning, when low training loss doesn't guarantee generalization, applies here as well. Additional initialization and regularization strategies may increase the chance of finding the well performing solutions.</p>
+<p>Finally, task 9 (replace every 4th '1' with 0') happened to be an interesting example of an insufficiently defined problem. I expected the optimization to find the solution similar to problems 0 and 1: a loop with 4 states, that counts a number of encountered '1'-s and replaces the last with '0'. Turns out that there is more than one 4-state solution for the training sequence <code>'01010100100111111'</code>. Optimization found a 4-state FSM 217 times, only 84 out of which were the machine I expected. If you expand the last cell of the table, which shows all discovered FSMs and their counts, you will see that we happened to be quite fortunate, because the second most popular machine count is smaller by just one. The other state machines have overfitted to the particular training sequence and are not going to perform correctly on other inputs. The usual rule of machine learning, when low training loss doesn't guarantee generalization, applies here as well. Additional initialization and regularization strategies may increase the chance of finding the well performing solutions.</p>
 <h2 id='related-work'>Related work</h2>
 <p>The amount of literature published on almost any topic is overwhelming these days. Finite state machine learning is not an exception. I tried to perform a quick search to give pointers on established methods that people use to solve FSM generation tasks similar to ones shown here. I also selected a few references that focus on different problems, but are conceptually similar, e.g. in their aim at finding the minimal possible solution to a given problem.</p>
 
@@ -157,15 +157,11 @@ def run_fsm(fsm: FSM, inputs):
 <p>Finally, string processing with state machines and FSM learning from data is a well studied subject that I unfortunately have only superficial knowledge about. I found this thesis to be a nice introduction into modern FSM learning methods and their applications. Here are some other resources on the topic:</p>
 
 <p>This literature review is incomplete and I've definitely missed some important references. Please let me know if I should include something else, e.g. if there's a paper that describes the same or very similar ideas to the one shown here.</p>
-<h2 id='acknowledgements'>Acknowledgements</h2>
-<p>I'd like to say thank you to my long-term collaborators Ettore Randazzo, Eyvind Niklasson and Dominik Roblek for providing feedback and helpful suggestions for this article. I also thank Google Research for supporting my work on this tutorial as a part of my broader research agenda.</p>
 
 </d-article>
 <d-appendix>
-
-
-
-
+<h2 id='acknowledgements'>Acknowledgements</h2>
+<p>I'd like to thank my long-term collaborators Ettore Randazzo, Eyvind Niklasson and Dominik Roblek for their feedback and helpful suggestions. I also thank Google Research for supporting my work on this tutorial as a part of my broader research agenda. This article was prepared using the <a href='https://distill.pub/'>Distill</a> <a href='https://github.com/distillpub/template'>template</a>.</p>
 
     <d-footnote-list></d-footnote-list>
     <d-citation-list></d-citation-list>
