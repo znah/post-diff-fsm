@@ -1,4 +1,120 @@
 
+@ARTICLE{Graves2014-tt,
+  title         = "Neural Turing Machines",
+  author        = "Graves, Alex and Wayne, Greg and Danihelka, Ivo",
+  abstract      = "We extend the capabilities of neural networks by coupling
+                   them to external memory resources, which they can interact
+                   with by attentional processes. The combined system is
+                   analogous to a Turing Machine or Von Neumann architecture
+                   but is differentiable end-to-end, allowing it to be
+                   efficiently trained with gradient descent. Preliminary
+                   results demonstrate that Neural Turing Machines can infer
+                   simple algorithms such as copying, sorting, and associative
+                   recall from input and output examples.",
+  month         =  oct,
+  year          =  2014,
+  archivePrefix = "arXiv",
+  primaryClass  = "cs.NE",
+  eprint        = "1410.5401",
+  url="https://arxiv.org/abs/1410.5401"
+}
+
+
+@ARTICLE{Koul2018-qy,
+  title         = "Learning Finite State Representations of Recurrent Policy
+                   Networks",
+  author        = "Koul, Anurag and Greydanus, Sam and Fern, Alan",
+  abstract      = "Recurrent neural networks (RNNs) are an effective
+                   representation of control policies for a wide range of
+                   reinforcement and imitation learning problems. RNN policies,
+                   however, are particularly difficult to explain, understand,
+                   and analyze due to their use of continuous-valued memory
+                   vectors and observation features. In this paper, we
+                   introduce a new technique, Quantized Bottleneck Insertion,
+                   to learn finite representations of these vectors and
+                   features. The result is a quantized representation of the
+                   RNN that can be analyzed to improve our understanding of
+                   memory use and general behavior. We present results of this
+                   approach on synthetic environments and six Atari games. The
+                   resulting finite representations are surprisingly small in
+                   some cases, using as few as 3 discrete memory states and 10
+                   observations for a perfect Pong policy. We also show that
+                   these finite policy representations lead to improved
+                   interpretability.",
+  month         =  nov,
+  year          =  2018,
+  archivePrefix = "arXiv",
+  primaryClass  = "cs.LG",
+  eprint        = "1811.12530",
+  url="https://arxiv.org/abs/1811.12530"
+}
+
+
+
+
+@ARTICLE{Pigem2013-tr,
+  title    = "Learning finite-state machines: statistical and algorithmic
+              aspects",
+  author   = "Pigem, Balle and De, Borja",
+  abstract = "This thesis gives the first application of this method for
+              learning conditional distributions over pairs of aligned
+              sequences and proves that the method can learn the whole class of
+              probabilistic automata, thus extending the class of models
+              previously known to be learnable with this approach. The present
+              thesis addresses several machine learning problems on generative
+              and predictive models on sequential data. All the models
+              considered have in common that they can be de ned in terms of
+              nite-state machines. On one line of work we study algorithms for
+              learning the probabilistic analog of Deterministic Finite
+              Automata (DFA). This provides a fairly expressive generative
+              model for sequences with very interesting algorithmic properties.
+              State-merging algorithms for learning these models can be
+              interpreted as a divisive clustering scheme where the
+              ``dependency graph'' between clusters is not necessarily a tree.
+              We characterize these algorithms in terms of statistical queries
+              and a use this characterization for proving a lower bound with an
+              explicit dependency on the distinguishability of the target
+              machine. In a more realistic setting, we give an adaptive
+              state-merging algorithm satisfying the stringent algorithmic
+              constraints of the data streams computing paradigm. Our
+              algorithms come with strict PAC learning guarantees. At the heart
+              of state-merging algorithms lies a statistical test for
+              distribution similarity. In the streaming version this is
+              replaced with a bootstrap-based test which yields faster
+              convergence in many situations. We also studied a wider class of
+              models for which the state-merging paradigm also yield PAC
+              learning algorithms. Applications of this method are given to
+              continuous-time Markovian models and stochastic transducers on
+              pairs of aligned sequences. The main tools used for obtaining
+              these results include a variety of concentration inequalities and
+              sketching algorithms. In another line of work we contribute to
+              the rapidly growing body of spectral learning algorithms. The
+              main virtues of this type of algorithms include the possibility
+              of proving nite-sample error bounds in the realizable case and
+              enormous savings on computing time over iterative methods like
+              Expectation-Maximization. In this thesis we give the rst
+              application of this method for learning conditional distributions
+              over pairs of aligned sequences de ned by probabilistic
+              nite-state transducers. We also prove that the method can learn
+              the whole class of probabilistic automata, thus extending the
+              class of models previously known to be learnable with this
+              approach. In the last two chapters we present works combining
+              spectral learning with methods from convex optimization and
+              matrix completion. Respectively, these yield an alternative
+              interpretation of spectral learning and an extension to cases
+              with missing data. In the latter case we used a novel joint
+              stability analysis of matrix completion and spectral learning to
+              prove the rst generalization bound for this type of algorithms
+              that holds in the non-realizable case. Work in this area has been
+              motivated by connections between spectral learning, classic
+              automata theory, and statistical learning; tools from these three
+              areas have been used.",
+  year     =  2013,
+  language = "en",
+  url = "https://borjaballe.github.io/other/phdthesis.pdf"
+}
+
+
 @ARTICLE{Lan2021-sz,
   title         = "Minimum Description Length Recurrent Neural Networks",
   author        = "Lan, Nur and Geyer, Michal and Chemla, Emmanuel and Katzir,
@@ -25,7 +141,7 @@
   url = "http://arxiv.org/abs/2111.00600",
 }
 
-@ARTICLE{Raffelt2009-vn,
+@ARTICLE{LearnLib,
   title     = "{LearnLib}: a framework for extrapolating behavioral models",
   author    = "Raffelt, Harald and Steffen, Bernhard and Berg, Therese and
                Margaria, Tiziana",
@@ -36,7 +152,8 @@
   pages     = "393--407",
   month     =  nov,
   year      =  2009,
-  language  = "en"
+  language  = "en",
+  url="https://learnlib.de/"
 }
 
 @ARTICLE{Hannun2020-vj,

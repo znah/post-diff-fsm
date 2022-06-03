@@ -2,7 +2,7 @@
 <p><a href="https://colab.research.google.com/github/znah/post-diff-fsm/blob/master/notebooks/diff_fsm_jax.ipynb#scrollTo=KqJ971iNjenq" target="_blank" class="colab-root">Reproduce in a <span class="colab-span">Notebook</span></a></p>
 <p>In this blog post I'd like to show how differentiable optimization can be used to learn Finite State Machines (FSM) for solving toy string processing tasks. I'll show how simple regularization and initialization techniques can steer continuous optimization towards finding discrete deterministic solutions and increase the training success rate. I think that experiments shown here may have some educational value, e.g. in demonstrating less conventional (and perhaps unexpected) uses of differentiable programming and some elegant JAX tricks.</p>
 
-<p>There exists a vast literature on various approaches to FSM synthesis from data, so it's highly likely that the community already knows the particular method described here. A quick review of related literature will be given in the <a href='#related-work'>Related Work</a> section. Please feel free to point me to additional relevant publications, you can do this by <a href='https://github.com/znah/post-diff-fsm/issues'>opening an issue</a> in the article repository.</p>
+<p>There exists a vast literature on various approaches to FSM synthesis from data, so it's highly likely that the particular method described here is already well known. A quick review of related literature will be given in the <a href='#related-work'>Related Work</a> section. Please feel free to point me to additional relevant resources or leave comments in this issue [TODO] on GitHub.</p>
 
 <p>Here is an example of a toy problem we are going to solve. Consider a pair of input-output strings: </p>
 
@@ -148,20 +148,18 @@ def run_fsm(fsm: FSM, inputs):
 
 <p>Finally, task 9 (replace every 4th '1' with 0') happened to be an interesting example of an insufficiently defined problem. I expected the optimization to find the solution similar to problems 0 and 1: a loop with 4 states, that counts a number of encountered '1'-s and replaces the last with '0'. Turns out that there is more than one 4-state solution for the training sequence <code>'01010100100111111'</code>. Optimization found a 4-state FSM 217 times, only 84 out of which were the machine I expected. If you expand the last cell of the table, which shows all discovered FSMs and their counts, you will see that we happened to be quite fortunate, because the second most popular machine count is smaller by just one. The other state machines have overfitted to the particular training sequence and are not going to perform correctly on other inputs. The usual rule of machine learning, when low training loss doesn't guarantee generalization, applies here as well. Additional initialization and regularization strategies may increase the chance of finding the well performing solutions.</p>
 <h2 id='related-work'>Related work</h2>
-<p>The amount of literature published on almost any topic is overwhelming these days. Finite state machine learning is not an exception. I tried to perform a quick search to give pointers on established methods that people use to solve FSM generation tasks similar to ones shown here. I also selected a few references that focus on different problems, but are conceptually similar, e.g. in their aim at finding the minimal possible solution to a given problem.</p>
+<p>The amount of literature published on almost any topic is overwhelming these days. Finite State Machine learning is not an exception, especially given that the concept of state machines lies at the very foundation of computer science. Here are just some of the vast number of relevant articles, some of which are not directly related to FSM learning, but still conceptually close. Please feel free to leave additional pointers in comments [TODO].</p>
 
-<p>The recent work <d-cite key="Lan2021-sz"></d-cite> tries to solve toy sequential string processing problems using very small recurrent neural networks instead of discrete state machines, and uses genetic algorithms instead of differentiable optimization. Authors observe that these compact models can be analyzed, interpreted.</p>
+<p><a href='https://learnlib.de/'>LearnLib</a> <d-cite key="LearnLib"></d-cite> is an extensive library of traditional FSM learning algorithms that are used in practice of e.g. communication systems modeling. An extensive discussion of probabilistic FSM learning can also be found here <d-cite key="Pigem2013-tr"></d-cite>.</p>
 
-<p>There is a lot of ongoing work that focuses on using discrete algorithms (such as quantization or sorting, FSMs) blocks inside of end-to-end differentiable pipelines. VQVAE…</p>
+<p>State machines were also shown to be useful as parts of more complex differentiable machine learning systems, e.g. <d-cite key="Graves2014-tt,Koul2018-qy"></d-cite></p>
 
-<p>Finally, string processing with state machines and FSM learning from data is a well studied subject that I unfortunately have only superficial knowledge about. I found this thesis to be a nice introduction into modern FSM learning methods and their applications. Here are some other resources on the topic:</p>
-
-<p>This literature review is incomplete and I've definitely missed some important references. Please let me know if I should include something else, e.g. if there's a paper that describes the same or very similar ideas to the one shown here.</p>
+<p>An interesting recent work <d-cite key="Lan2021-sz"></d-cite> tries to solve toy sequential string processing problems using very small recurrent neural networks instead of discrete state machines, and uses genetic algorithms instead of differentiable optimization. Authors make emphasis on interpretability and generalization of very compact models.</p>
 
 </d-article>
 <d-appendix>
 <h2 id='acknowledgements'>Acknowledgements</h2>
-<p>I'd like to thank my long-term collaborators Ettore Randazzo, Eyvind Niklasson and Dominik Roblek for their feedback and helpful suggestions. I also thank Google Research for supporting my work on this tutorial as a part of my broader research agenda. This article was prepared using the <a href='https://distill.pub/'>Distill</a> <a href='https://github.com/distillpub/template'>template</a>.</p>
+<p>I'd like to thank my colleagues Ettore Randazzo, Eyvind Niklasson, Dominik Roblek and David Ha for their feedback, suggestions and relevant work pointers. This article was prepared using the <a href='https://distill.pub/'>Distill</a> <a href='https://github.com/distillpub/template'>template</a> and customized <a href='https://github.com/znah/gdocs_distill_template'>Google Docs-&gt;HTML</a> workflow.</p>
 
     <d-footnote-list></d-footnote-list>
     <d-citation-list></d-citation-list>
